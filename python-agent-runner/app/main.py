@@ -14,7 +14,11 @@ app = FastAPI(title="Agentic Newsroom Python Agent Runner", version="0.1.0")
 
 
 def get_search(settings: Settings = Depends(get_settings)) -> SearchAdapter:
-    return get_search_adapter(settings.search_provider)
+    return get_search_adapter(
+        settings.search_provider,
+        searxng_base_url=settings.searxng_base_url,
+        rss_feed_urls=settings.rss_feed_urls,
+    )
 
 
 def get_store(settings: Settings = Depends(get_settings)) -> StoryStore:

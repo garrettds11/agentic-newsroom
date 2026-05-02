@@ -8,6 +8,7 @@ This Compose blueprint runs Agentic Newsroom local development services without 
 - `postgres`: n8n database, stored in a named Docker volume.
 - `python-agent-runner`: FastAPI runner, exposed on `127.0.0.1:8000` by default.
 - `ollama`: optional local model service, enabled only with the `ollama` profile.
+- `searxng`: optional self-hosted search service, enabled only with the `searxng` profile.
 
 ## Configuration
 
@@ -45,11 +46,32 @@ Start with optional Ollama:
 docker compose --env-file docker/.env.example --profile ollama up --build
 ```
 
+Start with optional SearXNG:
+
+```powershell
+docker compose --env-file docker/.env.example --profile searxng up --build
+```
+
+Run the Python runner against SearXNG:
+
+```text
+SEARCH_PROVIDER=searxng
+SEARXNG_BASE_URL=http://searxng:8080
+```
+
+Run the Python runner against RSS feeds:
+
+```text
+SEARCH_PROVIDER=rss
+RSS_FEED_URLS=https://example.com/feed.xml,https://example.org/rss.xml
+```
+
 ## URLs
 
 - n8n: `http://localhost:5678`
 - Python Agent Runner health: `http://localhost:8000/health`
 - Ollama, when enabled: `http://localhost:11434`
+- SearXNG, when enabled: `http://localhost:8080`
 
 ## Shutdown
 
@@ -77,5 +99,4 @@ docker compose down --rmi local
 - Postgres is available only inside the Compose network by default.
 - n8n and the Python runner are bound to localhost.
 - The Python runner defaults to dry-run mode and placeholder adapters.
-- No AWS, search, model, or Ollama calls are required unless explicitly configured later.
-
+- No AWS, paid search, model, or Ollama calls are required unless explicitly configured later.

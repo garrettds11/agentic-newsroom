@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     dry_run: bool = True
     aws_region: str = "us-east-1"
     search_provider: str = "placeholder"
+    searxng_base_url: str = "http://searxng:8080"
+    rss_feed_urls: str = ""
     storage_provider: str = "memory"
 
     model_config = SettingsConfigDict(
@@ -27,4 +29,3 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
-

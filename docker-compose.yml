@@ -50,6 +50,8 @@ services:
       DRY_RUN: ${DRY_RUN:-true}
       AWS_REGION: ${AWS_REGION:-us-east-1}
       SEARCH_PROVIDER: ${SEARCH_PROVIDER:-placeholder}
+      SEARXNG_BASE_URL: ${SEARXNG_BASE_URL:-http://searxng:8080}
+      RSS_FEED_URLS: ${RSS_FEED_URLS:-}
       STORAGE_PROVIDER: ${STORAGE_PROVIDER:-memory}
     ports:
       - "127.0.0.1:${PYTHON_AGENT_RUNNER_PORT:-8000}:8000"
@@ -66,9 +68,21 @@ services:
     volumes:
       - ollama_data:/root/.ollama
 
+  searxng:
+    image: searxng/searxng:latest
+    restart: unless-stopped
+    profiles:
+      - searxng
+    environment:
+      SEARXNG_BASE_URL: ${SEARXNG_PUBLIC_BASE_URL:-http://localhost:8080/}
+    ports:
+      - "127.0.0.1:${SEARXNG_PORT:-8080}:8080"
+    volumes:
+      - searxng_data:/etc/searxng
+
 volumes:
   postgres_data:
   n8n_data:
   python_agent_runner_data:
   ollama_data:
-
+  searxng_data:

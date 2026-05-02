@@ -40,13 +40,13 @@ The Python runtime owns the deeper newsroom behavior:
 - Retry handling.
 - Source capture normalization.
 - S3, DynamoDB, and SQS adapters.
-- Placeholder search adapters.
+- Placeholder, SearXNG, and RSS search adapters.
 
 The runner should default to dry-run local mode.
 
 ### External Search APIs
 
-Search should be adapter-based. Supported targets may include Tavily, Firecrawl, Serper, Google Search Grounding, or local placeholder adapters.
+Search should be adapter-based. The default target is the local placeholder adapter. No-cost/local-first targets include self-hosted SearXNG and configured RSS feeds. Tavily, Firecrawl, Serper, Google Search Grounding, or other paid APIs may be added later as optional adapters, but they are not required.
 
 Adapters must return normalized source records with:
 
@@ -55,6 +55,12 @@ Adapters must return normalized source records with:
 - Title or label.
 - Extracted text or summary.
 - Provider metadata.
+
+Current provider values:
+
+- `placeholder`: default dry-run source.
+- `searxng`: self-hosted SearXNG endpoint, normally `http://searxng:8080` inside Docker Compose.
+- `rss`: comma-separated RSS feed URLs through `RSS_FEED_URLS`.
 
 ### AWS Persistence
 
