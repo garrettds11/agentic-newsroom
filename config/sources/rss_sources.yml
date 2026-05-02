@@ -1,0 +1,23 @@
+sources:
+  - id: zdi_published_2026
+    name: Zero Day Initiative Published Advisories 2026
+    type: rss
+    enabled: true
+    url: https://www.zerodayinitiative.com/rss/published/2026/
+    fallback_urls:
+      - https://www.zerodayinitiative.com/rss/published/
+    category: cybersecurity
+    tags:
+      - vulnerabilities
+      - advisories
+      - zdi
+      - zero-day
+    max_items: 25
+    max_age_days: 365
+    excerpt_chars: 800
+    cache_ttl_seconds: 900
+    default_query_terms:
+      - vulnerability
+      - advisory
+      - zdi
+    notes: First manual/live RSS test source for registry-backed ingestion.

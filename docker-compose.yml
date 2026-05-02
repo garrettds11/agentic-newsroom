@@ -52,11 +52,21 @@ services:
       SEARCH_PROVIDER: ${SEARCH_PROVIDER:-placeholder}
       SEARXNG_BASE_URL: ${SEARXNG_BASE_URL:-http://searxng:8080}
       RSS_FEED_URLS: ${RSS_FEED_URLS:-}
+      RSS_SOURCE_REGISTRY_PATH: ${RSS_SOURCE_REGISTRY_PATH:-config/sources/rss_sources.yml}
+      RSS_SOURCE_IDS: ${RSS_SOURCE_IDS:-zdi_published_2026}
+      RSS_DEFAULT_MAX_ITEMS: ${RSS_DEFAULT_MAX_ITEMS:-25}
+      RSS_DEFAULT_EXCERPT_CHARS: ${RSS_DEFAULT_EXCERPT_CHARS:-800}
+      RSS_CACHE_TTL_SECONDS: ${RSS_CACHE_TTL_SECONDS:-900}
+      NEWSROOM_DEFAULT_MAX_SOURCES: ${NEWSROOM_DEFAULT_MAX_SOURCES:-25}
+      NEWSROOM_SYSTEM_MAX_SOURCES: ${NEWSROOM_SYSTEM_MAX_SOURCES:-250}
       STORAGE_PROVIDER: ${STORAGE_PROVIDER:-memory}
+      REQUIRE_AUTH: ${REQUIRE_AUTH:-false}
+      NEWSROOM_API_KEY: ${NEWSROOM_API_KEY:-replace-with-local-dev-placeholder}
     ports:
       - "127.0.0.1:${PYTHON_AGENT_RUNNER_PORT:-8000}:8000"
     volumes:
       - python_agent_runner_data:/app/data
+      - ./config:/app/config:ro
 
   ollama:
     image: ollama/ollama:latest
@@ -73,6 +83,7 @@ services:
     restart: unless-stopped
     profiles:
       - searxng
+      - search
     environment:
       SEARXNG_BASE_URL: ${SEARXNG_PUBLIC_BASE_URL:-http://localhost:8080/}
     ports:

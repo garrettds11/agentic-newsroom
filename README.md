@@ -2,6 +2,8 @@
 
 Agentic Newsroom is a hybrid, local-first Journalist-Editor newsroom system for topic intake, research, drafting, review, fact checking, and durable archiving.
 
+It is also evolving into a reusable local-first research service that other apps can call for normalized source records and reviewed story artifacts.
+
 ## Architecture Overview
 
 - **PyGPT desktop cockpit:** topic input, prompt testing, human review, and notifications.
@@ -15,6 +17,7 @@ Agentic Newsroom is a hybrid, local-first Journalist-Editor newsroom system for 
 - Keep development runnable without cloud writes by default.
 - Use placeholder adapters until real provider credentials are intentionally configured.
 - Do not require Tavily or any paid search API for local development.
+- Prefer registry-based RSS sources for reusable feed ingestion.
 - Never commit real secrets, account IDs, API keys, private credentials, or region-specific ARNs.
 - Do not run `terraform apply` from this repository without explicit human approval.
 
@@ -57,9 +60,42 @@ RSS mode:
 
 ```text
 SEARCH_PROVIDER=rss
-RSS_FEED_URLS=https://example.com/feed.xml,https://example.org/rss.xml
+RSS_SOURCE_REGISTRY_PATH=config/sources/rss_sources.yml
+RSS_SOURCE_IDS=zdi_published_2026
 ```
 
+`RSS_FEED_URLS` is still available for quick local experiments, but registry-based sources are preferred. ZDI published advisories are the first test source.
+
+SearXNG is metasearch. It is not used to ingest RSS feeds.
+
 Tavily and other paid APIs are optional future adapters, not required defaults.
+
+## Research Service
+
+Other local apps can call:
+
+```text
+POST /research
+```
+
+Result limits are configurable; `10` is not a fixed system limit:
+
+```text
+NEWSROOM_DEFAULT_MAX_SOURCES=25
+NEWSROOM_SYSTEM_MAX_SOURCES=250
+```
+
+Client apps can request larger result sets with `max_sources` within the system safety cap. Future pagination is represented by `page_size`, `cursor`, and `next_cursor`.
+
+PyGPT can ask an LLM to form the JSON request, but PyGPT or an integration tool sends the request to n8n or the Python runner.
+
+Local authentication is optional by default. When exposing beyond localhost, enable API-key checks with:
+
+```text
+REQUIRE_AUTH=true
+NEWSROOM_API_KEY=replace-with-local-secret-outside-git
+```
+
+See [research-request-contract.md](docs/api/research-request-contract.md) for the client request contract.
 
 See [IMPLEMENT.md](IMPLEMENT.md) and the backlog slices in [backlog/slices](backlog/slices) for the staged implementation plan.

@@ -8,6 +8,7 @@ This service is intentionally local-first. It does not require Tavily, OpenAI, G
 
 - `GET /health` health endpoint.
 - `POST /runs` endpoint accepting a topic.
+- `POST /research` service endpoint for reusable research requests from other apps.
 - Pydantic schemas for run requests, source records, drafts, editor decisions, and final story records.
 - Placeholder search adapter.
 - Optional self-hosted SearXNG search adapter.
@@ -49,10 +50,75 @@ RSS mode:
 
 ```powershell
 $env:SEARCH_PROVIDER="rss"
+$env:RSS_SOURCE_REGISTRY_PATH="config/sources/rss_sources.yml"
+$env:RSS_SOURCE_IDS="zdi_published_2026"
+```
+
+Quick RSS experiments can still use:
+
+```powershell
 $env:RSS_FEED_URLS="https://example.com/feed.xml,https://example.org/rss.xml"
 ```
 
+Registry-based sources are preferred. The first test source is `zdi_published_2026`, with `https://www.zerodayinitiative.com/rss/published/2026/` as primary and `https://www.zerodayinitiative.com/rss/published/` as fallback.
+
 Tests mock SearXNG and RSS responses and do not call real external services.
+
+## Research Endpoint
+
+```powershell
+Invoke-RestMethod `
+  -Method Post `
+  -Uri "http://localhost:8000/research" `
+  -ContentType "application/json" `
+  -Body '{"topic":"ZDI vulnerability advisory","source_provider":"rss","source_ids":["zdi_published_2026"],"max_sources":5}'
+```
+
+The response includes `metadata` with result-limit information:
+
+```json
+{
+  "requested_max_sources": 100,
+  "effective_max_sources": 100,
+  "system_max_sources": 250,
+  "capped": false,
+  "result_count": 25,
+  "page_size": null,
+  "cursor": null,
+  "next_cursor": null
+}
+```
+
+`max_sources` is optional. Omitted or null values use `NEWSROOM_DEFAULT_MAX_SOURCES`; requests above `NEWSROOM_SYSTEM_MAX_SOURCES` are capped. There is no fixed limit of 10.
+
+Future pagination fields `page_size`, `cursor`, and `next_cursor` are accepted now, but persistent pagination is not implemented yet.
+
+## Optional Local Auth
+
+Auth is disabled by default for local development:
+
+```powershell
+$env:REQUIRE_AUTH="false"
+```
+
+To test API-key protection:
+
+```powershell
+$env:REQUIRE_AUTH="true"
+$env:NEWSROOM_API_KEY="replace-with-local-dev-key"
+```
+
+Then send either:
+
+```text
+X-Newsroom-Api-Key: replace-with-local-dev-key
+```
+
+or:
+
+```text
+Authorization: Bearer replace-with-local-dev-key
+```
 
 ## Test
 

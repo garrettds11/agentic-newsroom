@@ -2,6 +2,8 @@
 
 Agentic Newsroom is designed as a hybrid local-first system with clear boundaries between cockpit, orchestration, agent runtime, external providers, and persistence.
 
+The Python runner is also shaped as a reusable research service for other local apps. `/runs` remains backward compatible, while `/research` is the service-oriented endpoint for future clients.
+
 ## Components
 
 ### PyGPT Desktop Cockpit
@@ -48,6 +50,8 @@ The runner should default to dry-run local mode.
 
 Search should be adapter-based. The default target is the local placeholder adapter. No-cost/local-first targets include self-hosted SearXNG and configured RSS feeds. Tavily, Firecrawl, Serper, Google Search Grounding, or other paid APIs may be added later as optional adapters, but they are not required.
 
+SearXNG is a metasearch provider. RSS feeds are ingested directly by the RSS adapter through the source registry.
+
 Adapters must return normalized source records with:
 
 - URL or source identifier.
@@ -60,7 +64,37 @@ Current provider values:
 
 - `placeholder`: default dry-run source.
 - `searxng`: self-hosted SearXNG endpoint, normally `http://searxng:8080` inside Docker Compose.
-- `rss`: comma-separated RSS feed URLs through `RSS_FEED_URLS`.
+- `rss`: registry-based RSS ingestion through `RSS_SOURCE_REGISTRY_PATH` and `RSS_SOURCE_IDS`.
+
+`RSS_FEED_URLS` remains available for quick local experiments, but the registry is preferred for reusable sources.
+
+### Inbound Research Requests
+
+Future clients should call `POST /research` with optional fields such as:
+
+- `topic`
+- `audience`
+- `angle`
+- `source_provider`
+- `source_ids`
+- `max_sources`
+- `sort`
+- `time_window`
+- `tags`
+- `category`
+- `output_format`
+- `page_size`
+- `cursor`
+
+Auth is disabled by default for local development. When exposed beyond localhost, enable `REQUIRE_AUTH=true` and provide `NEWSROOM_API_KEY` outside source control.
+
+Result limits are service-layer configuration, not adapter business rules. Defaults are `NEWSROOM_DEFAULT_MAX_SOURCES=25` and `NEWSROOM_SYSTEM_MAX_SOURCES=250`. Clients may request larger sets within the safety cap. Pagination is planned through `page_size`, `cursor`, and `next_cursor`, with `next_cursor` currently returned as `null`.
+
+### RSS Source Registry
+
+The default registry is [rss_sources.yml](../../config/sources/rss_sources.yml). The first test source is `zdi_published_2026`, backed by ZDI published advisories.
+
+The RSS adapter supports enabled-source filtering, fallback URLs, max item limits, excerpt truncation, deduplication, newest-first sorting when dates are available, source metadata preservation, and in-memory cache TTLs. Future persistent cache options include local SQLite, S3 object cache, and DynamoDB metadata cache.
 
 ### AWS Persistence
 

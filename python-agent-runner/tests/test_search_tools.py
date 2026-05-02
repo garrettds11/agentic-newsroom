@@ -10,10 +10,17 @@ from app.search_tools import (
 
 
 class MockResponse:
-    def __init__(self, json_payload=None, text: str = "", status_error: Exception | None = None) -> None:
+    def __init__(
+        self,
+        json_payload=None,
+        text: str = "",
+        status_error: Exception | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> None:
         self._json_payload = json_payload
         self.text = text
         self._status_error = status_error
+        self.headers = headers or {}
 
     def raise_for_status(self) -> None:
         if self._status_error:
@@ -92,6 +99,104 @@ def test_rss_adapter_parses_mocked_feed_content(monkeypatch) -> None:
     assert sources[0].metadata["feed_url"] == "https://example.com/feed.xml"
 
 
+def test_loads_registry_and_selects_source_id(tmp_path) -> None:
+    registry = tmp_path / "rss_sources.yml"
+    registry.write_text(
+        """
+sources:
+  - id: local_source
+    name: Local Source
+    type: rss
+    enabled: true
+    url: https://example.com/rss.xml
+    category: local
+    tags:
+      - civic
+""",
+        encoding="utf-8",
+    )
+
+    from app.search_tools import load_rss_source_registry, select_rss_sources
+
+    sources = load_rss_source_registry(str(registry))
+    selected = select_rss_sources(sources, ["local_source"])
+
+    assert selected[0].id == "local_source"
+    assert selected[0].category == "local"
+    assert selected[0].tags == ["civic"]
+
+
+def test_rss_adapter_uses_fallback_dedupes_limits_and_preserves_metadata(monkeypatch, tmp_path) -> None:
+    RssSearchAdapter._response_cache.clear()
+    registry = tmp_path / "rss_sources.yml"
+    registry.write_text(
+        """
+sources:
+  - id: fallback_source
+    name: Fallback Source
+    type: rss
+    enabled: true
+    url: https://example.com/primary.xml
+    fallback_urls:
+      - https://example.com/fallback.xml
+    category: test
+    tags:
+      - fallback
+    max_items: 1
+    excerpt_chars: 20
+    cache_ttl_seconds: 900
+""",
+        encoding="utf-8",
+    )
+    feed = """
+    <rss version="2.0">
+      <channel>
+        <item>
+          <title>Newest fallback item</title>
+          <link>https://example.com/newest</link>
+          <guid>same-guid</guid>
+          <pubDate>Sat, 02 May 2026 14:00:00 GMT</pubDate>
+          <description>This description is intentionally long enough to truncate.</description>
+        </item>
+        <item>
+          <title>Duplicate fallback item</title>
+          <link>https://example.com/duplicate</link>
+          <guid>same-guid</guid>
+          <pubDate>Sat, 02 May 2026 13:00:00 GMT</pubDate>
+          <description>This duplicate should be removed.</description>
+        </item>
+      </channel>
+    </rss>
+    """
+    calls: list[str] = []
+
+    def fake_get(url, timeout):
+        calls.append(url)
+        if "primary" in url:
+            raise requests.ConnectionError("primary unavailable")
+        return MockResponse(text=feed, headers={"ETag": "abc", "Last-Modified": "Sat, 02 May 2026 14:00:00 GMT"})
+
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    sources = RssSearchAdapter(
+        registry_path=str(registry),
+        source_ids=["fallback_source"],
+        default_max_items=10,
+        default_excerpt_chars=100,
+    ).search("fallback")
+
+    assert calls == ["https://example.com/primary.xml", "https://example.com/fallback.xml"]
+    assert len(sources) == 1
+    assert sources[0].title == "Newest fallback item"
+    assert sources[0].excerpt.endswith("...")
+    assert len(sources[0].excerpt) <= 20
+    assert str(sources[0].url) == "https://example.com/newest"
+    assert sources[0].metadata["source_id"] == "fallback_source"
+    assert sources[0].metadata["source_category"] == "test"
+    assert sources[0].metadata["source_tags"] == ["fallback"]
+    assert sources[0].metadata["cache"]["etag"] == "abc"
+
+
 def test_unsupported_provider_raises_clear_error() -> None:
     with pytest.raises(ValueError, match="Unsupported search provider 'paid-api'"):
         get_search_adapter("paid-api")
@@ -108,5 +213,5 @@ def test_searxng_adapter_fails_safely_on_bad_json(monkeypatch) -> None:
 
 
 def test_rss_adapter_fails_safely_without_urls() -> None:
-    with pytest.raises(RuntimeError, match="RSS_FEED_URLS is empty"):
+    with pytest.raises(RuntimeError, match="configure RSS_SOURCE_IDS with a registry or provide RSS_FEED_URLS"):
         RssSearchAdapter([]).search("topic")
