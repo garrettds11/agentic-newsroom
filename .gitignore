@@ -10,6 +10,10 @@ venv/
 *.tfstate.*
 .terraform/
 .terraform.lock.hcl
+*.tfvars
+*.tfvars.json
+*.tfplan
+!*.tfvars.example
 crash.log
 override.tf
 override.tf.json

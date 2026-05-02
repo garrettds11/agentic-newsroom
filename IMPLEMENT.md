@@ -40,19 +40,19 @@ git status --short
 ```
 
 ```powershell
-terraform fmt -check -recursive infra/terraform
+terraform -chdir=infra/terraform fmt -check -recursive
 ```
 
 ```powershell
-terraform validate
+terraform -chdir=infra/terraform validate
 ```
 
 ```powershell
-python -m compileall src tests
+python -m compileall python-agent-runner/app python-agent-runner/tests
 ```
 
 ```powershell
-pytest
+python-agent-runner/.venv/Scripts/python.exe -m pytest
 ```
 
 Commands that depend on future files are listed in the relevant backlog slices.

@@ -5,7 +5,7 @@ Agentic Newsroom is a hybrid, local-first Journalist-Editor newsroom system for 
 ## Architecture Overview
 
 - **PyGPT desktop cockpit:** topic input, prompt testing, human review, and notifications.
-- **n8n workflow orchestrator:** local workflow coordination, eventually running in Docker.
+- **n8n workflow orchestrator:** local workflow coordination through Docker Compose.
 - **Python agent runtime:** Journalist Agent, Editor Agent, deterministic fact checker, schema validation, retry handling, and AWS writes.
 - **External search adapters:** Tavily, Firecrawl, Serper, Google Search Grounding, or placeholder adapters.
 - **AWS persistence:** DynamoDB for run state and metadata, S3 for raw sources, drafts, artifacts, and logs, and SQS for queued jobs.
@@ -19,7 +19,7 @@ Agentic Newsroom is a hybrid, local-first Journalist-Editor newsroom system for 
 
 ## Planned Runtime Shape
 
-Docker Compose should eventually support:
+Docker Compose includes a local blueprint for:
 
 - n8n
 - Postgres for n8n persistence

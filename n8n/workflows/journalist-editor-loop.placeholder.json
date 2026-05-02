@@ -1,4 +1,5 @@
 {
+  "id": "journalist-editor-loop-placeholder",
   "name": "Agentic Newsroom - Journalist Editor Loop Placeholder",
   "nodes": [
     {
@@ -11,6 +12,20 @@
         -900,
         -140
       ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    topic: 'Manual placeholder topic for local Agentic Newsroom testing',\n    audience: 'general readers',\n    angle: 'local dry-run validation'\n  }\n}];"
+      },
+      "id": "c27b9412-4505-4140-bf7d-484f6ec29c2a",
+      "name": "Manual Topic Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -760,
+        -140
+      ],
+      "notes": "Edit this placeholder payload when testing the manual path."
     },
     {
       "parameters": {
@@ -83,9 +98,10 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.PYTHON_AGENT_RUNNER_URL || 'http://python-agent-runner:8000/runs' }}",
+        "url": "http://python-agent-runner:8000/runs",
         "sendBody": true,
         "contentType": "json",
+        "specifyBody": "json",
         "jsonBody": "={{ { \"topic\": $json.topic, \"audience\": $json.audience, \"angle\": $json.angle } }}",
         "options": {}
       },
@@ -193,9 +209,10 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.PYGPT_NOTIFICATION_WEBHOOK_URL || 'https://example.invalid/pygpt-webhook' }}",
+        "url": "http://python-agent-runner:8000/notifications/placeholder",
         "sendBody": true,
         "contentType": "json",
+        "specifyBody": "json",
         "jsonBody": "={{ { \"run_id\": $json.run_id, \"status\": $json.status, \"topic\": $json.topic, \"title\": $json.title, \"source_count\": $json.source_count, \"editor_decision\": $json.editor_decision } }}",
         "options": {}
       },
@@ -207,7 +224,7 @@
         880,
         -180
       ],
-      "notes": "Placeholder only. Replace URL before activation."
+        "notes": "Local dry-run placeholder. Replace URL before real PyGPT notification activation."
     },
     {
       "parameters": {
@@ -229,9 +246,10 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.PYGPT_NOTIFICATION_WEBHOOK_URL || 'https://example.invalid/pygpt-webhook' }}",
+        "url": "http://python-agent-runner:8000/notifications/placeholder",
         "sendBody": true,
         "contentType": "json",
+        "specifyBody": "json",
         "jsonBody": "={{ { \"run_id\": $json.run_id, \"status\": $json.status, \"message\": \"Run needs revision or was rejected.\", \"story\": $json.story } }}",
         "options": {}
       },
@@ -243,7 +261,7 @@
         620,
         40
       ],
-      "notes": "Placeholder only. Replace URL before activation."
+      "notes": "Local dry-run placeholder. Replace URL before real PyGPT notification activation."
     },
     {
       "parameters": {
@@ -266,6 +284,17 @@
   "pinData": {},
   "connections": {
     "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Manual Topic Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Topic Payload": {
       "main": [
         [
           {

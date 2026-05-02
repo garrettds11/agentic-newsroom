@@ -30,6 +30,15 @@ def health(settings: Settings = Depends(get_settings)) -> dict[str, str | bool]:
     }
 
 
+@app.post("/notifications/placeholder")
+def placeholder_notification(payload: dict) -> dict[str, bool | dict]:
+    return {
+        "accepted": True,
+        "dry_run": True,
+        "payload": payload,
+    }
+
+
 @app.post("/runs", response_model=RunResponse)
 def create_run(
     request: RunRequest,
@@ -56,4 +65,3 @@ def create_run(
     store.save_story(story)
 
     return RunResponse(run_id=run_id, status=status, story=story)
-

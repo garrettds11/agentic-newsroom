@@ -79,7 +79,7 @@ Ollama may be included in Docker Compose for local model experiments. It must re
 5. The Journalist Agent creates a sourced draft.
 6. The deterministic fact checker validates citations, schema, source coverage, and prohibited claims.
 7. The Editor Agent reviews the draft and requests revisions when needed.
-8. The runner writes local artifacts by default.
+8. The runner stays in dry-run local mode by default; the current scaffold uses in-memory storage stubs.
 9. When enabled, AWS adapters persist metadata to DynamoDB, objects to S3, and queued jobs to SQS.
 10. n8n notifies PyGPT or the human operator for review.
 

@@ -7,7 +7,7 @@ Coordinate a local-first Journalist-Editor workflow from topic intake through dr
 ## Workflow Stages
 
 1. **Manual Trigger or Webhook Trigger**
-   - Manual trigger supports local operator testing inside n8n.
+   - Manual trigger supports local operator testing inside n8n through an editable placeholder payload node.
    - Webhook trigger accepts topic payloads from PyGPT or another cockpit.
 
 2. **Validate Topic Input**
@@ -79,14 +79,16 @@ The current FastAPI runner returns:
 
 - Python Agent Runner in Docker: `http://python-agent-runner:8000/runs`
 - Python Agent Runner on host: `http://localhost:8000/runs`
-- PyGPT/user notification placeholder: `https://example.invalid/pygpt-webhook`
+- PyGPT/user notification placeholder: `http://python-agent-runner:8000/notifications/placeholder`
+
+The importable placeholder uses literal local URLs because recent n8n versions block `$env` access in node expressions by default.
 
 ## Import Notes
 
 Import [journalist-editor-loop.placeholder.json](journalist-editor-loop.placeholder.json) into n8n. Before activation:
 
 - Confirm the Python Agent Runner URL.
-- Replace notification placeholder URL.
+- Edit the manual placeholder payload when using the manual test path.
+- Replace notification placeholder URL before real PyGPT notification activation.
 - Replace any future AWS placeholder node with reviewed credentials.
 - Keep production publication or archive steps disabled until approved.
-

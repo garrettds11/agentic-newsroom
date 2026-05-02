@@ -29,13 +29,19 @@ Once n8n is running, import the placeholder export:
 The placeholder workflow expects the Python Agent Runner to be reachable from n8n at:
 
 ```text
-http://python-agent-runner:8000
+http://python-agent-runner:8000/runs
+```
+
+The local dry-run notification placeholder is:
+
+```text
+http://python-agent-runner:8000/notifications/placeholder
 ```
 
 When running n8n outside Docker, use:
 
 ```text
-http://localhost:8000
+http://localhost:8000/runs
 ```
 
 ## Webhook
@@ -55,4 +61,3 @@ Example payload:
   "angle": "public accountability"
 }
 ```
-
