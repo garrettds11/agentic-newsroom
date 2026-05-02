@@ -1,0 +1,16 @@
+flowchart LR
+    Human["Human operator"]
+    PyGPT["PyGPT cockpit"]
+    Workflow["n8n workflow"]
+    Runtime["Python newsroom agents"]
+    Sources["Search and sources"]
+    Archive["Optional AWS archive"]
+    Review["Reviewed draft"]
+
+    Human --> PyGPT
+    PyGPT --> Workflow
+    Workflow --> Runtime
+    Runtime --> Sources
+    Runtime --> Review
+    Runtime --> Archive
+    Review --> Human

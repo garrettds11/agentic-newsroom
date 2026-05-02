@@ -1,0 +1,23 @@
+# Agentic Newsroom Codex configuration
+#
+# Assumptions:
+# - This repository should default to safe local development.
+# - Cloud deployment, Terraform apply, real credentials, and production writes are manual human actions.
+# - Destructive commands such as recursive delete, reset, checkout, clean, apply, deploy, or volume cleanup
+#   should require explicit user approval before execution.
+# - Network access should not be needed for ordinary documentation, scaffold, and unit-test work.
+# - No secrets belong in this file.
+
+# Keep the agent inside the repository by default while still allowing normal file edits.
+sandbox_mode = "workspace-write"
+
+# Ask before running commands that need elevated permissions or leave the local safety boundary.
+approval_policy = "on-request"
+
+[sandbox_workspace_write]
+# Require approval for networked commands unless the user explicitly allows them.
+network_access = false
+
+# No extra writable roots are declared. Edits should stay inside this repository.
+writable_roots = []
+

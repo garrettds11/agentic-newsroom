@@ -1,0 +1,66 @@
+flowchart LR
+    subgraph Desktop["Local desktop"]
+        PyGPT["PyGPT cockpit"]
+    end
+
+    subgraph Docker["Docker Compose local stack"]
+        N8N["n8n orchestrator"]
+        Postgres["Postgres for n8n"]
+        Runner["Python Agent Runner"]
+        Ollama["Optional Ollama"]
+    end
+
+    subgraph Runtime["Python runtime modules"]
+        Journalist["Journalist Agent"]
+        Editor["Editor Agent"]
+        FactChecker["Deterministic Fact Checker"]
+        Schemas["Schema Validation"]
+        Retries["Retry Handler"]
+        SearchAdapters["Search Adapters"]
+        AwsAdapters["AWS Persistence Adapters"]
+    end
+
+    subgraph Search["External search APIs"]
+        Tavily["Tavily"]
+        Firecrawl["Firecrawl"]
+        Serper["Serper"]
+        GoogleGrounding["Google Search Grounding"]
+        Placeholder["Placeholder Adapter"]
+    end
+
+    subgraph AWS["Optional AWS persistence"]
+        SQS["SQS job queue"]
+        S3["S3 sources drafts artifacts logs"]
+        DynamoDB["DynamoDB run state metadata"]
+    end
+
+    PyGPT --> N8N
+    N8N <--> Postgres
+    N8N --> Runner
+    N8N --> SQS
+    SQS --> Runner
+
+    Runner --> Journalist
+    Runner --> Editor
+    Runner --> FactChecker
+    Runner --> Schemas
+    Runner --> Retries
+    Runner --> SearchAdapters
+    Runner --> AwsAdapters
+    Runner --> Ollama
+
+    SearchAdapters --> Tavily
+    SearchAdapters --> Firecrawl
+    SearchAdapters --> Serper
+    SearchAdapters --> GoogleGrounding
+    SearchAdapters --> Placeholder
+
+    AwsAdapters --> SQS
+    AwsAdapters --> S3
+    AwsAdapters --> DynamoDB
+
+    Journalist --> FactChecker
+    FactChecker --> Editor
+    Editor --> Runner
+    Runner --> N8N
+    N8N --> PyGPT

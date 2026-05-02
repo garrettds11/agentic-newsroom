@@ -1,0 +1,410 @@
+{
+  "name": "Agentic Newsroom - Journalist Editor Loop Placeholder",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "d4c8151f-298f-42ce-a2ea-fc418c383e9b",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -900,
+        -140
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "newsroom-topic",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "283034d0-1d46-48fc-965c-2e8d9357fb42",
+      "name": "Webhook Topic Intake",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -900,
+        120
+      ],
+      "webhookId": "agentic-newsroom-topic-placeholder"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json.body ?? $json;\nconst topic = typeof input.topic === 'string' ? input.topic.trim() : '';\nreturn [{\n  json: {\n    valid: topic.length >= 3,\n    topic,\n    audience: input.audience ?? null,\n    angle: input.angle ?? null,\n    validation_error: topic.length >= 3 ? null : 'A topic of at least 3 characters is required.'\n  }\n}];"
+      },
+      "id": "ae96a330-d132-482b-9e20-c88514d53995",
+      "name": "Validate Topic Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -620,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.valid }}",
+              "value2": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3c20b25e-d039-4a76-9471-b741b0304d62",
+      "name": "Topic Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -380,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"accepted\": false, \"error\": $json.validation_error } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "66fe083e-a86f-46fe-8053-c54a5475165f",
+      "name": "Reject Invalid Topic",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -120,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.PYTHON_AGENT_RUNNER_URL || 'http://python-agent-runner:8000/runs' }}",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ { \"topic\": $json.topic, \"audience\": $json.audience, \"angle\": $json.angle } }}",
+        "options": {}
+      },
+      "id": "9d567f4a-037c-47a1-89a2-30a04c713bdf",
+      "name": "Create Run via Python Agent Runner",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -120,
+        -80
+      ],
+      "notes": "Local-first path. Future AWS design may replace this with DynamoDB create-run plus SQS enqueue."
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "seconds"
+      },
+      "id": "449af722-e76a-4e9f-814e-4d33f437849c",
+      "name": "Wait or Poll Placeholder",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        120,
+        -80
+      ],
+      "notes": "The local runner responds synchronously today. In async mode, replace this with DynamoDB polling or a callback webhook."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.status }}",
+              "operation": "equals",
+              "value2": "completed"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2ab4490b-9d78-4360-b727-60a7b1dcc0de",
+      "name": "Approved?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        360,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7a38b77b-ddbb-4b36-a120-884c720af941",
+              "name": "run_id",
+              "value": "={{ $json.run_id }}",
+              "type": "string"
+            },
+            {
+              "id": "ab361b61-439f-4c3b-88db-d29e5023e39a",
+              "name": "status",
+              "value": "={{ $json.status }}",
+              "type": "string"
+            },
+            {
+              "id": "0f8d00f0-5dad-4d45-b781-193523cd56f6",
+              "name": "topic",
+              "value": "={{ $json.story.topic }}",
+              "type": "string"
+            },
+            {
+              "id": "33549c7a-9fd6-42a7-b1e0-ae44df4ff531",
+              "name": "title",
+              "value": "={{ $json.story.draft.title }}",
+              "type": "string"
+            },
+            {
+              "id": "ecce0a89-27e0-402e-aa89-54f5015515df",
+              "name": "source_count",
+              "value": "={{ $json.story.sources.length }}",
+              "type": "number"
+            },
+            {
+              "id": "1eb8b1ea-ef2f-4d27-b4cb-b2cf2ec92515",
+              "name": "editor_decision",
+              "value": "={{ $json.story.editor_decision.status }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "24a85317-8b10-4379-9fa2-bc34b9543b15",
+      "name": "Store Approved Metadata Placeholder",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        620,
+        -180
+      ],
+      "notes": "Replace with reviewed DynamoDB/S3 storage nodes later. No credentials are included."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.PYGPT_NOTIFICATION_WEBHOOK_URL || 'https://example.invalid/pygpt-webhook' }}",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ { \"run_id\": $json.run_id, \"status\": $json.status, \"topic\": $json.topic, \"title\": $json.title, \"source_count\": $json.source_count, \"editor_decision\": $json.editor_decision } }}",
+        "options": {}
+      },
+      "id": "6e4dc710-a5a6-4ab0-80ad-5ba1f63ff386",
+      "name": "Notify PyGPT User Placeholder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        -180
+      ],
+      "notes": "Placeholder only. Replace URL before activation."
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"accepted\": true, \"run_id\": $json.run_id, \"status\": $json.status, \"message\": \"Run completed and notification placeholder executed.\" } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "c14872fd-e9fc-40e9-99d6-a784e9e2ed9f",
+      "name": "Respond Approved",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        -180
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.PYGPT_NOTIFICATION_WEBHOOK_URL || 'https://example.invalid/pygpt-webhook' }}",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ { \"run_id\": $json.run_id, \"status\": $json.status, \"message\": \"Run needs revision or was rejected.\", \"story\": $json.story } }}",
+        "options": {}
+      },
+      "id": "679c68b0-5b0b-4ab0-9d09-694188414a51",
+      "name": "Notify Revision Placeholder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        620,
+        40
+      ],
+      "notes": "Placeholder only. Replace URL before activation."
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"accepted\": true, \"run_id\": $json.run_id, \"status\": $json.status, \"message\": \"Run needs revision or was rejected.\" } }}",
+        "options": {
+          "responseCode": 202
+        }
+      },
+      "id": "640027aa-a532-441f-b81a-a4e0acc06df5",
+      "name": "Respond Revision",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        880,
+        40
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Validate Topic Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Topic Intake": {
+      "main": [
+        [
+          {
+            "node": "Validate Topic Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Topic Input": {
+      "main": [
+        [
+          {
+            "node": "Topic Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Topic Valid?": {
+      "main": [
+        [
+          {
+            "node": "Create Run via Python Agent Runner",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reject Invalid Topic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Run via Python Agent Runner": {
+      "main": [
+        [
+          {
+            "node": "Wait or Poll Placeholder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait or Poll Placeholder": {
+      "main": [
+        [
+          {
+            "node": "Approved?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approved?": {
+      "main": [
+        [
+          {
+            "node": "Store Approved Metadata Placeholder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify Revision Placeholder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Approved Metadata Placeholder": {
+      "main": [
+        [
+          {
+            "node": "Notify PyGPT User Placeholder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify PyGPT User Placeholder": {
+      "main": [
+        [
+          {
+            "node": "Respond Approved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Revision Placeholder": {
+      "main": [
+        [
+          {
+            "node": "Respond Revision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "placeholder-blueprint-v1",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "placeholder"
+  },
+  "tags": [
+    {
+      "name": "agentic-newsroom"
+    },
+    {
+      "name": "placeholder"
+    }
+  ]
+}
