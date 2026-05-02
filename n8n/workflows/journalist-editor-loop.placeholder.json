@@ -1,6 +1,6 @@
 {
   "id": "journalist-editor-loop-placeholder",
-  "name": "Agentic Newsroom - Journalist Editor Loop Placeholder",
+  "name": "Agentic Newsroom - Research Request Placeholder",
   "nodes": [
     {
       "parameters": {},
@@ -9,53 +9,54 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        -900,
+        -920,
         -140
       ]
     },
     {
       "parameters": {
-        "jsCode": "return [{\n  json: {\n    topic: 'Manual placeholder topic for local Agentic Newsroom testing',\n    audience: 'general readers',\n    angle: 'local dry-run validation'\n  }\n}];"
+        "jsCode": "return [{\n  json: {\n    topic: 'local placeholder research request',\n    audience: 'local operator',\n    angle: 'dry-run validation',\n    source_provider: 'placeholder',\n    tags: ['local', 'dry-run'],\n    category: 'local',\n    sort: 'published_desc',\n    output_format: 'brief',\n    page_size: null,\n    cursor: null,\n    client_api_key: null\n  }\n}];"
       },
       "id": "c27b9412-4505-4140-bf7d-484f6ec29c2a",
-      "name": "Manual Topic Payload",
+      "name": "Manual Research Payload",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -760,
+        -700,
         -140
       ],
-      "notes": "Edit this placeholder payload when testing the manual path."
+      "notes": "Edit this placeholder payload when testing the manual path. Do not store real API keys here."
     },
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "newsroom-topic",
+        "path": "newsroom-research",
         "responseMode": "responseNode",
         "options": {}
       },
       "id": "283034d0-1d46-48fc-965c-2e8d9357fb42",
-      "name": "Webhook Topic Intake",
+      "name": "Webhook Research Intake",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        -900,
+        -920,
         120
       ],
-      "webhookId": "agentic-newsroom-topic-placeholder"
+      "webhookId": "agentic-newsroom-research-placeholder"
     },
     {
       "parameters": {
-        "jsCode": "const input = $json.body ?? $json;\nconst topic = typeof input.topic === 'string' ? input.topic.trim() : '';\nreturn [{\n  json: {\n    valid: topic.length >= 3,\n    topic,\n    audience: input.audience ?? null,\n    angle: input.angle ?? null,\n    validation_error: topic.length >= 3 ? null : 'A topic of at least 3 characters is required.'\n  }\n}];"
+        "jsCode": "const input = $json.body ?? $json;\nconst headers = $json.headers ?? {};\nconst topic = typeof input.topic === 'string' ? input.topic.trim() : '';\nconst optionalFields = [\n  'audience',\n  'angle',\n  'source_provider',\n  'source_ids',\n  'max_sources',\n  'tags',\n  'category',\n  'sort',\n  'output_format',\n  'page_size',\n  'cursor'\n];\nconst request = { topic };\nfor (const field of optionalFields) {\n  if (Object.prototype.hasOwnProperty.call(input, field) && input[field] !== undefined) {\n    request[field] = input[field];\n  }\n}\nconst clientApiKey = headers['x-newsroom-api-key'] ?? headers['X-Newsroom-Api-Key'] ?? null;\nreturn [{\n  json: {\n    valid: topic.length >= 3,\n    validation_error: topic.length >= 3 ? null : 'A topic of at least 3 characters is required.',\n    research_request: request,\n    client_api_key: clientApiKey\n  }\n}];"
       },
       "id": "ae96a330-d132-482b-9e20-c88514d53995",
-      "name": "Validate Topic Input",
+      "name": "Normalize Research Request",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -620,
+        -460,
         0
-      ]
+      ],
+      "notes": "Preserves optional fields and leaves max_sources omitted when the caller omits it."
     },
     {
       "parameters": {
@@ -70,11 +71,11 @@
         "options": {}
       },
       "id": "3c20b25e-d039-4a76-9471-b741b0304d62",
-      "name": "Topic Valid?",
+      "name": "Research Request Valid?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -380,
+        -220,
         0
       ]
     },
@@ -87,197 +88,58 @@
         }
       },
       "id": "66fe083e-a86f-46fe-8053-c54a5475165f",
-      "name": "Reject Invalid Topic",
+      "name": "Reject Invalid Research Request",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -120,
-        220
+        40,
+        180
       ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "http://python-agent-runner:8000/runs",
+        "url": "http://python-agent-runner:8000/research",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Newsroom-Api-Key",
+              "value": "={{ $json.client_api_key || '' }}"
+            }
+          ]
+        },
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
-        "jsonBody": "={{ { \"topic\": $json.topic, \"audience\": $json.audience, \"angle\": $json.angle } }}",
+        "jsonBody": "={{ $json.research_request }}",
         "options": {}
       },
       "id": "9d567f4a-037c-47a1-89a2-30a04c713bdf",
-      "name": "Create Run via Python Agent Runner",
+      "name": "Forward to Python Research Service",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -120,
+        40,
         -80
       ],
-      "notes": "Local-first path. Future AWS design may replace this with DynamoDB create-run plus SQS enqueue."
-    },
-    {
-      "parameters": {
-        "amount": 1,
-        "unit": "seconds"
-      },
-      "id": "449af722-e76a-4e9f-814e-4d33f437849c",
-      "name": "Wait or Poll Placeholder",
-      "type": "n8n-nodes-base.wait",
-      "typeVersion": 1.1,
-      "position": [
-        120,
-        -80
-      ],
-      "notes": "The local runner responds synchronously today. In async mode, replace this with DynamoDB polling or a callback webhook."
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "string": [
-            {
-              "value1": "={{ $json.status }}",
-              "operation": "equals",
-              "value2": "completed"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "2ab4490b-9d78-4360-b727-60a7b1dcc0de",
-      "name": "Approved?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [
-        360,
-        -80
-      ]
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "7a38b77b-ddbb-4b36-a120-884c720af941",
-              "name": "run_id",
-              "value": "={{ $json.run_id }}",
-              "type": "string"
-            },
-            {
-              "id": "ab361b61-439f-4c3b-88db-d29e5023e39a",
-              "name": "status",
-              "value": "={{ $json.status }}",
-              "type": "string"
-            },
-            {
-              "id": "0f8d00f0-5dad-4d45-b781-193523cd56f6",
-              "name": "topic",
-              "value": "={{ $json.story.topic }}",
-              "type": "string"
-            },
-            {
-              "id": "33549c7a-9fd6-42a7-b1e0-ae44df4ff531",
-              "name": "title",
-              "value": "={{ $json.story.draft.title }}",
-              "type": "string"
-            },
-            {
-              "id": "ecce0a89-27e0-402e-aa89-54f5015515df",
-              "name": "source_count",
-              "value": "={{ $json.story.sources.length }}",
-              "type": "number"
-            },
-            {
-              "id": "1eb8b1ea-ef2f-4d27-b4cb-b2cf2ec92515",
-              "name": "editor_decision",
-              "value": "={{ $json.story.editor_decision.status }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "24a85317-8b10-4379-9fa2-bc34b9543b15",
-      "name": "Store Approved Metadata Placeholder",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        620,
-        -180
-      ],
-      "notes": "Replace with reviewed DynamoDB/S3 storage nodes later. No credentials are included."
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "http://python-agent-runner:8000/notifications/placeholder",
-        "sendBody": true,
-        "contentType": "json",
-        "specifyBody": "json",
-        "jsonBody": "={{ { \"run_id\": $json.run_id, \"status\": $json.status, \"topic\": $json.topic, \"title\": $json.title, \"source_count\": $json.source_count, \"editor_decision\": $json.editor_decision } }}",
-        "options": {}
-      },
-      "id": "6e4dc710-a5a6-4ab0-80ad-5ba1f63ff386",
-      "name": "Notify PyGPT User Placeholder",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        880,
-        -180
-      ],
-        "notes": "Local dry-run placeholder. Replace URL before real PyGPT notification activation."
+      "notes": "Local-first path to POST /research. The Python service applies default/capped max_sources."
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { \"accepted\": true, \"run_id\": $json.run_id, \"status\": $json.status, \"message\": \"Run completed and notification placeholder executed.\" } }}",
+        "responseBody": "={{ $json }}",
         "options": {
           "responseCode": 200
         }
       },
       "id": "c14872fd-e9fc-40e9-99d6-a784e9e2ed9f",
-      "name": "Respond Approved",
+      "name": "Return Research Response",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        1120,
-        -180
-      ]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "http://python-agent-runner:8000/notifications/placeholder",
-        "sendBody": true,
-        "contentType": "json",
-        "specifyBody": "json",
-        "jsonBody": "={{ { \"run_id\": $json.run_id, \"status\": $json.status, \"message\": \"Run needs revision or was rejected.\", \"story\": $json.story } }}",
-        "options": {}
-      },
-      "id": "679c68b0-5b0b-4ab0-9d09-694188414a51",
-      "name": "Notify Revision Placeholder",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        620,
-        40
-      ],
-      "notes": "Local dry-run placeholder. Replace URL before real PyGPT notification activation."
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ { \"accepted\": true, \"run_id\": $json.run_id, \"status\": $json.status, \"message\": \"Run needs revision or was rejected.\" } }}",
-        "options": {
-          "responseCode": 202
-        }
-      },
-      "id": "640027aa-a532-441f-b81a-a4e0acc06df5",
-      "name": "Respond Revision",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [
-        880,
-        40
+        300,
+        -80
       ]
     }
   ],
@@ -287,131 +149,69 @@
       "main": [
         [
           {
-            "node": "Manual Topic Payload",
+            "node": "Manual Research Payload",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Manual Topic Payload": {
+    "Manual Research Payload": {
       "main": [
         [
           {
-            "node": "Validate Topic Input",
+            "node": "Normalize Research Request",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Webhook Topic Intake": {
+    "Webhook Research Intake": {
       "main": [
         [
           {
-            "node": "Validate Topic Input",
+            "node": "Normalize Research Request",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Validate Topic Input": {
+    "Normalize Research Request": {
       "main": [
         [
           {
-            "node": "Topic Valid?",
+            "node": "Research Request Valid?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Topic Valid?": {
+    "Research Request Valid?": {
       "main": [
         [
           {
-            "node": "Create Run via Python Agent Runner",
+            "node": "Forward to Python Research Service",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Reject Invalid Topic",
+            "node": "Reject Invalid Research Request",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Create Run via Python Agent Runner": {
+    "Forward to Python Research Service": {
       "main": [
         [
           {
-            "node": "Wait or Poll Placeholder",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Wait or Poll Placeholder": {
-      "main": [
-        [
-          {
-            "node": "Approved?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Approved?": {
-      "main": [
-        [
-          {
-            "node": "Store Approved Metadata Placeholder",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Notify Revision Placeholder",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Store Approved Metadata Placeholder": {
-      "main": [
-        [
-          {
-            "node": "Notify PyGPT User Placeholder",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Notify PyGPT User Placeholder": {
-      "main": [
-        [
-          {
-            "node": "Respond Approved",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Notify Revision Placeholder": {
-      "main": [
-        [
-          {
-            "node": "Respond Revision",
+            "node": "Return Research Response",
             "type": "main",
             "index": 0
           }
@@ -423,7 +223,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "placeholder-blueprint-v1",
+  "versionId": "research-placeholder-blueprint-v1",
   "meta": {
     "templateCredsSetupCompleted": false,
     "instanceId": "placeholder"
@@ -431,6 +231,9 @@
   "tags": [
     {
       "name": "agentic-newsroom"
+    },
+    {
+      "name": "research"
     },
     {
       "name": "placeholder"

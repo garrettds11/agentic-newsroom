@@ -1,4 +1,6 @@
-from app.schemas import DraftRecord, RunRequest, SourceRecord
+import hashlib
+
+from app.schemas import DraftRecord, RunRequest, SourceRecord, SourceSupport
 
 
 class JournalistAgent:
@@ -7,6 +9,7 @@ class JournalistAgent:
     def draft(self, run_id: str, request: RunRequest, sources: list[SourceRecord]) -> DraftRecord:
         source_ids = [source.source_id for source in sources]
         body = self._build_body(request=request, sources=sources)
+        source_support = [self._support_for_source(source) for source in sources]
 
         return DraftRecord(
             run_id=run_id,
@@ -14,6 +17,7 @@ class JournalistAgent:
             title=f"Draft: {request.topic}",
             body=body,
             source_ids=source_ids,
+            source_support=source_support,
         )
 
     def _build_body(self, request: RunRequest, sources: list[SourceRecord]) -> str:
@@ -61,3 +65,23 @@ class JournalistAgent:
         if len(cleaned) <= max_chars:
             return cleaned
         return cleaned[: max_chars - 3].rstrip() + "..."
+
+    def _support_for_source(self, source: SourceRecord) -> SourceSupport:
+        published_at = source.metadata.get("published_at")
+        supported_fields = ["title", "url", "excerpt"]
+        if published_at:
+            supported_fields.append("published_at")
+
+        excerpt_preview = self._clean_excerpt(source.excerpt, max_chars=180)
+        excerpt_hash = hashlib.sha256(source.excerpt.encode("utf-8")).hexdigest()
+
+        return SourceSupport(
+            source_id=source.source_id,
+            title=source.title,
+            url=source.url,
+            provider=source.provider,
+            published_at=str(published_at) if published_at else None,
+            excerpt_hash=excerpt_hash,
+            excerpt_preview=excerpt_preview,
+            supported_fields=supported_fields,
+        )

@@ -69,7 +69,9 @@ Tests mock SearXNG and RSS responses and do not call real external services.
 
 The current Journalist Agent is deterministic and template-based. It does not call an LLM. Drafts are assembled from the retrieved `SourceRecord` objects and include source titles, URLs, provider/source metadata, published timestamps when present, and source excerpts.
 
-LLM summarization and richer narrative drafting are future functionality. Current output should be treated as a source-grounded draft packet for editor review, not final reporting.
+Drafts also include `source_support`, a compact deterministic support map for each key item. Each entry records the source ID, title, URL, provider, published timestamp when present, excerpt hash, excerpt preview, and supported fields.
+
+LLM summarization and richer narrative drafting are future functionality. Any future synthesis step must preserve source support mapping. Current output should be treated as a source-grounded draft packet for editor review, not final reporting.
 
 ## Research Endpoint
 

@@ -78,6 +78,12 @@ Other local apps can call:
 POST /research
 ```
 
+External/local clients should generally call n8n as the listener and orchestrator:
+
+```text
+POST /webhook/newsroom-research
+```
+
 Result limits are configurable; `10` is not a fixed system limit:
 
 ```text

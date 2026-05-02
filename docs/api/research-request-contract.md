@@ -4,7 +4,9 @@ Agentic Newsroom is a local-first research service for PyGPT, n8n, and future cl
 
 The LLM may help form a JSON request, but the host app or integration tool sends that JSON to n8n or the Python Agent Runner. n8n is the preferred listener and orchestrator for external clients. The Python Agent Runner is the runtime and research service.
 
-Current drafts are deterministic source-grounded drafts assembled from retrieved `SourceRecord` objects. LLM summarization and richer generated analysis are future functionality.
+Current drafts are deterministic source-grounded drafts assembled from retrieved `SourceRecord` objects. Drafts include a `source_support` map that links each key item back to source IDs, titles, URLs, providers, timestamps when available, excerpt hashes, and excerpt previews.
+
+LLM summarization and richer generated analysis are future functionality. Any future LLM synthesis must preserve source support.
 
 Auth is optional for local development. Enable API-key auth before exposing endpoints beyond localhost.
 
@@ -14,6 +16,12 @@ Preferred service endpoint:
 
 ```text
 POST /research
+```
+
+n8n webhook endpoint for external clients:
+
+```text
+POST /webhook/newsroom-research
 ```
 
 Backward-compatible endpoint:
@@ -154,3 +162,5 @@ X-Newsroom-Api-Key: <key>
 ```text
 Authorization: Bearer <key>
 ```
+
+When clients call n8n, they may include `X-Newsroom-Api-Key`. The placeholder n8n workflow forwards this header to the Python runner. n8n itself does not enforce auth yet.

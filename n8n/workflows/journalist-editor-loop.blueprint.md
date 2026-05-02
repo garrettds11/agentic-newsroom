@@ -1,85 +1,80 @@
-# Journalist-Editor Loop Blueprint
+# Research Request Workflow Blueprint
 
 ## Goal
 
-Coordinate a local-first Journalist-Editor workflow from topic intake through draft creation, fact checking, editorial decision, notification, and approved metadata storage.
+Accept structured research requests from PyGPT, n8n manual tests, or future client apps, then forward them to the Python Agent Runner `POST /research` endpoint.
+
+`POST /runs` remains available in the Python service for backward compatibility, but this n8n blueprint uses `/research` as the primary service contract.
 
 ## Workflow Stages
 
 1. **Manual Trigger or Webhook Trigger**
-   - Manual trigger supports local operator testing inside n8n through an editable placeholder payload node.
-   - Webhook trigger accepts topic payloads from PyGPT or another cockpit.
+   - Manual trigger supports local operator testing through an editable placeholder payload node.
+   - Webhook trigger accepts structured research JSON from PyGPT or another client.
 
-2. **Validate Topic Input**
-   - Require `topic`.
-   - Reject blank or very short topics.
-   - Pass optional `audience` and `angle` through when supplied.
+2. **Normalize Research Request**
+   - Requires `topic`.
+   - Preserves optional request fields:
+     - `audience`
+     - `angle`
+     - `source_provider`
+     - `source_ids`
+     - `max_sources`
+     - `tags`
+     - `category`
+     - `sort`
+     - `output_format`
+     - `page_size`
+     - `cursor`
+   - Leaves `max_sources` omitted when the caller omits it, so the Python service applies `NEWSROOM_DEFAULT_MAX_SOURCES`.
 
-3. **Create Run Record**
-   - Placeholder design: call the Python Agent Runner `POST /runs`.
-   - Future AWS design: create a DynamoDB run record before enqueueing work.
+3. **Forward To Python Research Service**
+   - Calls `http://python-agent-runner:8000/research`.
+   - Forwards `X-Newsroom-Api-Key` from incoming webhook headers when present.
+   - Does not store or hard-code real secrets.
 
-4. **Enqueue Or Execute Job**
-   - Current local blueprint calls the Python Agent Runner directly.
-   - Future cloud blueprint can enqueue to SQS and have the Python runner consume jobs.
+4. **Return Response**
+   - Returns the Python `/research` response directly to the webhook caller.
 
-5. **Wait For Decision**
-   - Current placeholder receives the decision in the immediate runner response.
-   - Future async mode can poll DynamoDB or wait for an n8n callback webhook.
+## Webhook Path
 
-6. **Notify PyGPT/User**
-   - Placeholder HTTP Request node posts to `https://example.invalid/pygpt-webhook`.
-   - Replace with a real local PyGPT webhook, desktop notification bridge, or review queue endpoint later.
+```text
+/webhook/newsroom-research
+```
 
-7. **Store Approved Content Metadata**
-   - Placeholder node shapes metadata for approved stories.
-   - Future AWS node can write metadata to DynamoDB and artifact pointers to S3.
-
-## Expected Input
+## Example Request
 
 ```json
 {
-  "topic": "Required newsroom assignment topic",
-  "audience": "Optional audience",
-  "angle": "Optional reporting angle"
+  "topic": "latest ZDI advisories",
+  "audience": "security researchers",
+  "angle": "newly published advisories",
+  "source_provider": "rss",
+  "source_ids": ["zdi_published_2026"],
+  "max_sources": 100,
+  "tags": ["vulnerabilities", "advisories", "zdi"],
+  "category": "cybersecurity",
+  "sort": "published_desc",
+  "output_format": "brief",
+  "page_size": 50,
+  "cursor": null
 }
 ```
 
-## Python Runner Request
+## Auth
 
-```json
-{
-  "topic": "={{ $json.topic }}",
-  "audience": "={{ $json.audience }}",
-  "angle": "={{ $json.angle }}"
-}
+n8n does not enforce API-key auth in this placeholder workflow. If the Python runner has `REQUIRE_AUTH=true`, clients can send:
+
+```text
+X-Newsroom-Api-Key: <key>
 ```
 
-## Python Runner Response
-
-The current FastAPI runner returns:
-
-```json
-{
-  "run_id": "run_example",
-  "status": "completed",
-  "story": {
-    "run_id": "run_example",
-    "status": "completed",
-    "topic": "Example topic",
-    "draft": {},
-    "sources": [],
-    "fact_check": {},
-    "editor_decision": {}
-  }
-}
-```
+The workflow forwards that header to the Python runner. Do not store real keys in the workflow export.
 
 ## Placeholder URLs
 
-- Python Agent Runner in Docker: `http://python-agent-runner:8000/runs`
-- Python Agent Runner on host: `http://localhost:8000/runs`
-- PyGPT/user notification placeholder: `http://python-agent-runner:8000/notifications/placeholder`
+- Python Agent Runner in Docker: `http://python-agent-runner:8000/research`
+- Python Agent Runner on host: `http://localhost:8000/research`
 
 The importable placeholder uses literal local URLs because recent n8n versions block `$env` access in node expressions by default.
 
@@ -89,6 +84,5 @@ Import [journalist-editor-loop.placeholder.json](journalist-editor-loop.placehol
 
 - Confirm the Python Agent Runner URL.
 - Edit the manual placeholder payload when using the manual test path.
-- Replace notification placeholder URL before real PyGPT notification activation.
-- Replace any future AWS placeholder node with reviewed credentials.
+- Review auth behavior before exposing beyond localhost.
 - Keep production publication or archive steps disabled until approved.

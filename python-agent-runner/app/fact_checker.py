@@ -10,6 +10,8 @@ DATE_PATTERN = re.compile(
     re.IGNORECASE,
 )
 QUOTE_PATTERN = re.compile(r'"([^"]+)"')
+CVE_PATTERN = re.compile(r"\bCVE-\d{4}-\d{4,}\b", re.IGNORECASE)
+CVSS_PATTERN = re.compile(r"\bCVSS(?:\s+(?:rating|score))?\s+(?:of\s+)?\d{1,2}(?:\.\d)?\b", re.IGNORECASE)
 
 
 class FactChecker:
@@ -25,6 +27,8 @@ class FactChecker:
         issues.extend(self._check_percentages(body, sources))
         issues.extend(self._check_dates(body, sources))
         issues.extend(self._check_quotes(body, sources))
+        issues.extend(self._check_cves(body, sources))
+        issues.extend(self._check_cvss(body, sources))
 
         blocking = [issue for issue in issues if issue.severity == "error"]
         return FactCheckReport(passed=not blocking, issues=issues)
@@ -91,12 +95,19 @@ class FactChecker:
 
         return issues
 
+    def _check_cves(self, body: str, sources: list[SourceRecord]) -> list[FactCheckIssue]:
+        return self._check_pattern_presence("cve", CVE_PATTERN, body, sources, severity="error")
+
+    def _check_cvss(self, body: str, sources: list[SourceRecord]) -> list[FactCheckIssue]:
+        return self._check_pattern_presence("cvss", CVSS_PATTERN, body, sources, severity="error")
+
     def _check_pattern_presence(
         self,
         check_name: str,
         pattern: re.Pattern[str],
         body: str,
         sources: list[SourceRecord],
+        severity: str = "warning",
     ) -> list[FactCheckIssue]:
         matches = pattern.findall(body)
         if not matches:
@@ -111,6 +122,6 @@ class FactChecker:
             FactCheckIssue(
                 check=check_name,
                 message=f"Draft contains values not found in source excerpts: {', '.join(missing)}.",
-                severity="warning",
+                severity=severity,
             )
         ]

@@ -36,23 +36,27 @@ PyGPT should not own:
 
 ## Local-First Workflow
 
-During local development, PyGPT can submit to n8n at:
+During local development, PyGPT can submit structured research requests to n8n at:
 
 ```text
-http://localhost:5678/webhook/newsroom-topic
+http://localhost:5678/webhook/newsroom-research
 ```
 
 The n8n workflow can then call the Python Agent Runner at:
 
 ```text
-http://python-agent-runner:8000/runs
+http://python-agent-runner:8000/research
 ```
 
 When testing outside Docker, use:
 
 ```text
-http://localhost:8000/runs
+http://localhost:8000/research
 ```
+
+PyGPT can ask an LLM to form JSON with fields such as `topic`, `source_provider`, `source_ids`, `max_sources`, `tags`, `category`, `sort`, `output_format`, `page_size`, and `cursor`. PyGPT or a local integration tool sends the JSON; the LLM does not send network requests by itself.
+
+If Python runner auth is enabled with `REQUIRE_AUTH=true`, the client may send `X-Newsroom-Api-Key` to n8n. The placeholder workflow forwards it to `/research`.
 
 ## Review Loop
 
@@ -79,4 +83,3 @@ Future PyGPT integrations may include:
 - Review checklist tools.
 
 These tools should remain cockpit helpers. Durable workflow control should stay in n8n and the Python Agent Runner.
-

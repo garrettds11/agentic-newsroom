@@ -88,3 +88,67 @@ def test_fact_checker_warns_on_unmatched_numbers_percentages_and_dates() -> None
 
     assert report.passed is True
     assert {issue.check for issue in report.issues} >= {"numbers", "percentages", "dates"}
+
+
+def test_fact_checker_passes_cve_from_source_excerpt() -> None:
+    source = make_source(excerpt="The advisory references CVE-2026-41265.")
+    draft = DraftRecord(
+        run_id="run_test",
+        topic="Test",
+        title="Test draft",
+        body="The advisory references CVE-2026-41265.",
+        source_ids=[source.source_id],
+    )
+
+    report = FactChecker().check(draft=draft, sources=[source])
+
+    assert report.passed is True
+    assert not any(issue.check == "cve" for issue in report.issues)
+
+
+def test_fact_checker_flags_cve_not_in_source_excerpt() -> None:
+    source = make_source(excerpt="The advisory references a vulnerability.")
+    draft = DraftRecord(
+        run_id="run_test",
+        topic="Test",
+        title="Test draft",
+        body="The advisory references CVE-2026-41265.",
+        source_ids=[source.source_id],
+    )
+
+    report = FactChecker().check(draft=draft, sources=[source])
+
+    assert report.passed is False
+    assert any(issue.check == "cve" for issue in report.issues)
+
+
+def test_fact_checker_passes_cvss_from_source_excerpt() -> None:
+    source = make_source(excerpt="The advisory lists a CVSS rating of 9.8.")
+    draft = DraftRecord(
+        run_id="run_test",
+        topic="Test",
+        title="Test draft",
+        body="The advisory lists a CVSS rating of 9.8.",
+        source_ids=[source.source_id],
+    )
+
+    report = FactChecker().check(draft=draft, sources=[source])
+
+    assert report.passed is True
+    assert not any(issue.check == "cvss" for issue in report.issues)
+
+
+def test_fact_checker_flags_cvss_not_in_source_excerpt() -> None:
+    source = make_source(excerpt="The advisory lists a severity rating.")
+    draft = DraftRecord(
+        run_id="run_test",
+        topic="Test",
+        title="Test draft",
+        body="The advisory lists a CVSS rating of 9.8.",
+        source_ids=[source.source_id],
+    )
+
+    report = FactChecker().check(draft=draft, sources=[source])
+
+    assert report.passed is False
+    assert any(issue.check == "cvss" for issue in report.issues)

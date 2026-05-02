@@ -74,6 +74,17 @@ class SourceRecord(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
+class SourceSupport(BaseModel):
+    source_id: str
+    title: str
+    url: HttpUrl
+    provider: str
+    published_at: str | None = None
+    excerpt_hash: str
+    excerpt_preview: str
+    supported_fields: list[str] = Field(default_factory=list)
+
+
 class DraftRecord(BaseModel):
     draft_id: str = Field(default_factory=lambda: f"draft_{uuid4().hex}")
     run_id: str
@@ -81,6 +92,7 @@ class DraftRecord(BaseModel):
     title: str
     body: str
     source_ids: list[str] = Field(default_factory=list)
+    source_support: list[SourceSupport] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 

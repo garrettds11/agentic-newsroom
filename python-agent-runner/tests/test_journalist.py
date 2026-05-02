@@ -53,6 +53,36 @@ def test_all_included_source_ids_are_preserved() -> None:
     assert draft.source_ids == ["src_zdi_1", "src_zdi_2"]
 
 
+def test_source_grounded_draft_creates_support_mapping_for_each_source() -> None:
+    sources = [
+        rss_like_source(),
+        SourceRecord(
+            source_id="src_zdi_2",
+            title="Second advisory",
+            url="https://example.com/second-advisory",
+            excerpt="Second advisory excerpt.",
+            provider="rss",
+        ),
+    ]
+
+    draft = JournalistAgent().draft(
+        run_id="run_test",
+        request=RunRequest(topic="ZDI advisories"),
+        sources=sources,
+    )
+
+    assert len(draft.source_support) == 2
+    first = draft.source_support[0]
+    assert first.source_id == "src_zdi_1"
+    assert first.title == "ZDI advisory for sample product"
+    assert str(first.url) == "https://example.com/zdi-advisory"
+    assert first.provider == "rss"
+    assert first.published_at == "2026-05-02T12:00:00+00:00"
+    assert first.excerpt_preview == "ZDI published an advisory for a sample product issue."
+    assert len(first.excerpt_hash) == 64
+    assert first.supported_fields == ["title", "url", "excerpt", "published_at"]
+
+
 def test_fact_checker_passes_source_grounded_draft() -> None:
     source = rss_like_source()
     draft = JournalistAgent().draft(
