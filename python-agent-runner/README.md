@@ -13,6 +13,7 @@ This service is intentionally local-first. It does not require Tavily, OpenAI, G
 - Placeholder search adapter.
 - Optional self-hosted SearXNG search adapter.
 - RSS feed search adapter.
+- Deterministic/template-based Journalist Agent drafts assembled from retrieved `SourceRecord` objects.
 - Deterministic fact-checking stubs for numbers, percentages, dates, quotes, and source URL presence.
 - AWS storage wrapper stubs that are safe for unit tests and dry-run local execution.
 
@@ -63,6 +64,12 @@ $env:RSS_FEED_URLS="https://example.com/feed.xml,https://example.org/rss.xml"
 Registry-based sources are preferred. The first test source is `zdi_published_2026`, with `https://www.zerodayinitiative.com/rss/published/2026/` as primary and `https://www.zerodayinitiative.com/rss/published/` as fallback.
 
 Tests mock SearXNG and RSS responses and do not call real external services.
+
+## Journalist Agent
+
+The current Journalist Agent is deterministic and template-based. It does not call an LLM. Drafts are assembled from the retrieved `SourceRecord` objects and include source titles, URLs, provider/source metadata, published timestamps when present, and source excerpts.
+
+LLM summarization and richer narrative drafting are future functionality. Current output should be treated as a source-grounded draft packet for editor review, not final reporting.
 
 ## Research Endpoint
 
