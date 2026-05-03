@@ -10,7 +10,7 @@ It is also evolving into a reusable local-first research service that other apps
 - **n8n workflow orchestrator:** local workflow coordination through Docker Compose.
 - **Python agent runtime:** Journalist Agent, Editor Agent, deterministic fact checker, schema validation, retry handling, and AWS writes.
 - **Search adapters:** placeholder by default, optional self-hosted SearXNG, RSS feeds, and future paid APIs only when intentionally configured.
-- **AWS persistence:** DynamoDB for run state and metadata, S3 for raw sources, drafts, artifacts, and logs, and SQS for queued jobs.
+- **AWS persistence:** S3 as the artifact store for large research payloads, DynamoDB as the compact run ledger and dashboard index, and SQS for queued jobs.
 
 ## Local-First Principles
 
@@ -103,5 +103,17 @@ NEWSROOM_API_KEY=replace-with-local-secret-outside-git
 ```
 
 See [research-request-contract.md](docs/api/research-request-contract.md) for the client request contract.
+
+## Persistence Design
+
+Large research artifacts should be written to S3, while DynamoDB stores compact run metadata and S3 pointers. DynamoDB should not store raw feeds, full source sets, full responses, draft bodies, future LLM transcripts, or verbose logs directly.
+
+Recommended S3 run prefix:
+
+```text
+runs/env=<env>/year=<YYYY>/month=<MM>/day=<DD>/run_id=<run_id>/
+```
+
+See [dynamodb-persistence-design.md](docs/aws/dynamodb-persistence-design.md) and [s3-artifact-design.md](docs/aws/s3-artifact-design.md) for the artifact manifest, DynamoDB record shape, and phased implementation plan.
 
 See [IMPLEMENT.md](IMPLEMENT.md) and the backlog slices in [backlog/slices](backlog/slices) for the staged implementation plan.

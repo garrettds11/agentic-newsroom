@@ -4,10 +4,18 @@ This Terraform/OpenTofu blueprint defines the optional AWS persistence layer for
 
 It creates:
 
-- DynamoDB table for run state, metadata, status, scores, and source URLs.
-- S3 bucket for raw sources, drafts, final artifacts, and logs.
+- S3 bucket for large research artifacts, raw payloads, drafts, reports, responses, and logs.
+- DynamoDB table for the compact run ledger, metadata, status, indexes, and S3 pointers.
 - SQS queue and dead-letter queue for agent jobs.
 - Least-privilege IAM managed policy for a local agent runner.
+
+S3 is the artifact system of record. DynamoDB should store compact metadata and object keys such as `manifest_s3_key`, `full_response_s3_key`, `draft_s3_key`, `sources_s3_key`, `fact_check_s3_key`, and `events_s3_key`.
+
+Recommended object prefix:
+
+```text
+runs/env=<env>/year=<YYYY>/month=<MM>/day=<DD>/run_id=<run_id>/
+```
 
 ## Safety
 
@@ -76,4 +84,3 @@ terraform -chdir=infra/terraform plan -var-file="envs/dev/terraform.tfvars"
 ```
 
 Do not apply infrastructure until naming, permissions, cost, retention, and AWS account context have been explicitly approved.
-

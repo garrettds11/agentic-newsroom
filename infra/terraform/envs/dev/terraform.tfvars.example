@@ -15,10 +15,13 @@ dynamodb_point_in_time_recovery_enabled = true
 # S3 bucket names are globally unique, so review this before planning.
 s3_bucket_name = null
 
-s3_force_destroy                       = false
-s3_log_retention_days                  = 90
-s3_raw_source_retention_days           = 365
-s3_noncurrent_version_retention_days   = 30
+s3_force_destroy                     = false
+s3_run_artifact_retention_days       = 730
+s3_noncurrent_version_retention_days = 30
+
+# Deprecated compatibility variables. Prefer s3_run_artifact_retention_days.
+s3_log_retention_days        = 90
+s3_raw_source_retention_days = 365
 
 sqs_visibility_timeout_seconds = 300
 sqs_message_retention_seconds  = 345600

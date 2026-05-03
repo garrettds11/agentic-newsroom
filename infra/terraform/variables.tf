@@ -62,15 +62,21 @@ variable "s3_force_destroy" {
 }
 
 variable "s3_log_retention_days" {
-  description = "Days before objects under logs/ expire."
+  description = "Deprecated compatibility variable. Run artifacts now use s3_run_artifact_retention_days under runs/env=<env>/."
   type        = number
   default     = 90
 }
 
 variable "s3_raw_source_retention_days" {
-  description = "Days before objects under raw-sources/ expire."
+  description = "Deprecated compatibility variable. Run artifacts now use s3_run_artifact_retention_days under runs/env=<env>/."
   type        = number
   default     = 365
+}
+
+variable "s3_run_artifact_retention_days" {
+  description = "Days before current run artifacts under runs/env=<env>/ expire. Review before applying in production."
+  type        = number
+  default     = 730
 }
 
 variable "s3_noncurrent_version_retention_days" {
@@ -96,4 +102,3 @@ variable "sqs_max_receive_count" {
   type        = number
   default     = 5
 }
-

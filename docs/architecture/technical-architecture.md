@@ -100,11 +100,27 @@ The RSS adapter supports enabled-source filtering, fallback URLs, max item limit
 
 AWS is optional and should be disabled by default.
 
-- **DynamoDB:** run state, job metadata, story metadata, validation results.
-- **S3:** raw source captures, drafts, edited artifacts, fact-check logs, workflow logs.
+- **S3:** primary artifact store and system of record for raw requests, raw feed/search payloads, normalized sources, full responses, drafts, fact-check reports, editor decisions, future transcripts, and logs.
+- **DynamoDB:** compact run ledger, dashboard index, status tracker, metadata store, and S3 pointer layer.
 - **SQS:** queued research or editorial jobs.
 
+Large payloads must be written to S3, not embedded in DynamoDB items. DynamoDB should store compact fields such as `run_id`, `status`, `topic`, `category`, `tags`, `source_provider`, `source_ids`, `result_count`, `draft_preview`, `fact_check_passed`, `editor_status`, and S3 keys such as `manifest_s3_key`, `full_response_s3_key`, `draft_s3_key`, `sources_s3_key`, `fact_check_s3_key`, and `events_s3_key`.
+
+S3 keys should follow the run-scoped layout:
+
+```text
+runs/env=<env>/year=<YYYY>/month=<MM>/day=<DD>/run_id=<run_id>/
+```
+
+S3 and DynamoDB writes are not transactional together, so persistence code must handle partial failures and reconciliation. The first implementation phase should use a local file artifact store that mirrors the S3 key structure before enabling AWS writes.
+
 Terraform should define resources without hard-coded account IDs, API keys, private credentials, or region-specific ARNs.
+
+See [dynamodb-persistence-design.md](../aws/dynamodb-persistence-design.md) and [s3-artifact-design.md](../aws/s3-artifact-design.md).
+
+### Presentation Layer
+
+The dashboard list should read compact metadata from DynamoDB through a backend API. Run detail views should read the DynamoDB item, then load the S3 manifest and selected artifacts through the backend. Browsers should not directly access DynamoDB or S3 in v1.
 
 ### Optional Ollama
 

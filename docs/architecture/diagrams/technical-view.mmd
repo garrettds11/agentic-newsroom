@@ -20,18 +20,17 @@ flowchart LR
         AwsAdapters["AWS Persistence Adapters"]
     end
 
-    subgraph Search["External search APIs"]
-        Tavily["Tavily"]
-        Firecrawl["Firecrawl"]
-        Serper["Serper"]
-        GoogleGrounding["Google Search Grounding"]
+    subgraph Search["Search providers"]
         Placeholder["Placeholder Adapter"]
+        RSS["RSS source registry"]
+        SearXNG["Self-hosted SearXNG"]
+        FuturePaid["Optional future paid adapters"]
     end
 
     subgraph AWS["Optional AWS persistence"]
         SQS["SQS job queue"]
-        S3["S3 sources drafts artifacts logs"]
-        DynamoDB["DynamoDB run state metadata"]
+        S3["S3 artifact system of record"]
+        DynamoDB["DynamoDB compact run ledger"]
     end
 
     PyGPT --> N8N
@@ -49,11 +48,10 @@ flowchart LR
     Runner --> AwsAdapters
     Runner --> Ollama
 
-    SearchAdapters --> Tavily
-    SearchAdapters --> Firecrawl
-    SearchAdapters --> Serper
-    SearchAdapters --> GoogleGrounding
     SearchAdapters --> Placeholder
+    SearchAdapters --> RSS
+    SearchAdapters --> SearXNG
+    SearchAdapters --> FuturePaid
 
     AwsAdapters --> SQS
     AwsAdapters --> S3

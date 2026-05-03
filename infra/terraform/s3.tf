@@ -38,15 +38,11 @@ resource "aws_s3_bucket_lifecycle_configuration" "artifacts" {
   bucket = aws_s3_bucket.artifacts.id
 
   rule {
-    id     = "expire-logs"
+    id     = "retain-run-artifacts"
     status = "Enabled"
 
     filter {
-      prefix = "logs/"
-    }
-
-    expiration {
-      days = var.s3_log_retention_days
+      prefix = "runs/env=${var.environment}/"
     }
 
     noncurrent_version_expiration {
@@ -55,33 +51,15 @@ resource "aws_s3_bucket_lifecycle_configuration" "artifacts" {
   }
 
   rule {
-    id     = "expire-raw-sources"
+    id     = "expire-run-artifacts"
     status = "Enabled"
 
     filter {
-      prefix = "raw-sources/"
+      prefix = "runs/env=${var.environment}/"
     }
 
     expiration {
-      days = var.s3_raw_source_retention_days
-    }
-
-    noncurrent_version_expiration {
-      noncurrent_days = var.s3_noncurrent_version_retention_days
-    }
-  }
-
-  rule {
-    id     = "retain-drafts-and-final-artifacts"
-    status = "Enabled"
-
-    filter {
-      prefix = "drafts/"
-    }
-
-    noncurrent_version_expiration {
-      noncurrent_days = var.s3_noncurrent_version_retention_days
+      days = var.s3_run_artifact_retention_days
     }
   }
 }
-
